@@ -1,8 +1,5 @@
 
 import sys
-sys.path.append('/usr/local/src/mokaguys/development_area/automate_demultiplex')
-import samplesheet_verifier
-import automate_demultiplex_config
 import subprocess
 import imghdr
 import os
@@ -38,8 +35,14 @@ def upload_files():
     """
     if app.config['TEST']:
         PASSED_PATH = app.config['TEST_PASSED_PATH']
+        AUTOMATED_SCRIPTS = '/usr/local/src/mokaguys/development_area/automate_demultiplex'
     else:
         PASSED_PATH = app.config['LIVE_PASSED_PATH']
+        AUTOMATED_SCRIPTS = '/usr/local/src/mokaguys/apps/automate_demultiplex/'
+
+    sys.path.append(AUTOMATED_SCRIPTS)
+    import samplesheet_verifier
+    import automate_demultiplex_config
 
     print('========')
     uploaded_file = request.files['file']

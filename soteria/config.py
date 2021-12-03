@@ -7,6 +7,8 @@ class Config(object):
     TEST_PASSED_PATH = "passed/"
     APPLICATION_ROOT = '/usr/local/src/mokaguys/development_area/soteria/'
     SECRET_KEY = 'random key'
+    TEST_AUTOMATED_SCRIPTS = '/usr/local/src/mokaguys/development_area/automate_demultiplex'
+    LIVE_AUTOMATED_SCRIPTS = '/usr/local/src/mokaguys/apps/automate_demultiplex/'
     TEST = True
 
 class DevelopmentConfig(Config):
