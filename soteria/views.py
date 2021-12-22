@@ -32,7 +32,6 @@ def upload_files():
     Uploads file to an upload directory, runs verification checks on the file and removes the file or moves it to a
     passed directory depending on the outputs of the checks. Outputs of checks displayed on the rendered template.
     """
-    print(listdir)
     ss_dir = app.config['SS_DIR']
     automated_scripts = app.config['AUTOMATED_SCRIPTS']
 
@@ -44,15 +43,12 @@ def upload_files():
     # mount the automated scripts folder and the samplesheets folder
     # put the flask app within the docker container
 
-    print('========')
     uploaded_file = request.files['file']
     filename = secure_filename(uploaded_file.filename)
-    print(type(uploaded_file))
     messages = []
     # assign empty variables so if 'submit' is clicked with no input file the webpage doesn't break
     if filename != '':
         samplesheet_path = os.path.join(ss_dir, filename)
-        print("Filepath: " + samplesheet_path)
         # save the file to the samplesheet folder
         uploaded_file.save(samplesheet_path)
 
