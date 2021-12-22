@@ -9,9 +9,11 @@ __email__ = "dbrawand@nhs.net"
 __status__ = "Development"
 
 import os
+import sys
+sys.path.append("..")
 from flask import Flask, render_template, request, redirect
 from werkzeug.utils import secure_filename
-from .config import DevelopmentConfig
+from config import DevelopmentConfig
 
 app = Flask(__name__)
 app.config.from_object(DevelopmentConfig())
