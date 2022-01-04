@@ -109,5 +109,5 @@ def samplesheet_upload():
             result = "Samplesheet already uploaded"
             instructions = "No further actions required"
         colour = "red"
-    return render_template('index.html', result=result, instructions = instructions, messages=messages,
+    return render_template('samplesheet_upload.html', result=result, instructions = instructions, messages=messages,
                            app_version=git_tag(), txt_colour=colour, uploaded_file=filename)
