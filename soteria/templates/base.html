@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<html lang="en">
+<head style="padding-left:10px">
+<meta charset="utf-8"/>
+<meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+<title>File upload and validation</title>
+<!-- Bootstrap -->
+<link href="./css/bootstrap.min.css" rel="stylesheet"/>
+<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+<!--[if lt IE 9]>
+	  <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+	  <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+	<![endif]-->
+<div class="header">
+  <h4 style="text-align: right">moka-guys/soteria {{app_version}} </h4>
+      <h4 style="text-align: right"> {% if not current_user.is_authenticated %}
+      Hi {{ current_user.name }}!
+      {% endif %} </h4>
+<hr/><h1>Illumina SampleSheet Upload Tool</h1><hr/>
+</div>
+</head>
+<body style="padding-left:10px">
+
+{% block title %}
+
+{% endblock %}
+</body>
+<!--Stops file resubmission upon page refresh -->
+<script>
+    if ( window.history.replaceState ) {
+        window.history.replaceState( null, null, window.location.href );
+    }
+</script>
+</html>

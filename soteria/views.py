@@ -4,13 +4,12 @@ import imghdr
 import os
 import shutil
 from flask import Flask, render_template, request, redirect, url_for, abort, flash
+from flask_login import login_required
 from werkzeug.utils import secure_filename
 from collections import OrderedDict
+import functools
+from . import forms
 from . import app
-
-@app.route('/')
-def index():
-    return render_template('index.html')
 
 def git_tag():
     """
@@ -26,8 +25,41 @@ def git_tag():
     out, err = proc.communicate()
     return out.rstrip().decode('utf-8')
 
+@app.route('/', methods=['GET'])
+def index():
+    # redirects to login page from base url
+    return render_template('login.html')
+
 @app.route('/', methods=['POST'])
-def upload_files():
+def login():
+    # Here we use a class of some kind to represent and validate our
+    # client-side form data. For example, WTForms is a library that will
+    # handle this for us, and we use a custom LoginForm to validate.
+    form = forms.LoginForm()
+    if form.validate_on_submit():
+        # Login and validate the user.
+        # user should be an instance of your `User` class
+        login_user(user)
+
+        flash('Logged in successfully.')
+
+        next = request.args.get('next')
+        # is_safe_url should check if the url is safe for redirects.
+        # See http://flask.pocoo.org/snippets/62/ for an example.
+        if not is_safe_url(next):
+            return abort(400)
+        # redirects to samplesheet page upon login
+        return redirect(next or url_for('samplesheet_page'))
+    return render_template('login.html', form=form)
+
+@app.route('/samplesheet_upload', methods=['GET'])
+@login_required
+def samplesheet_page():
+    return render_template('samplesheet_upload.html')
+
+@app.route('/samplesheet_upload', methods=['POST'])
+@login_required
+def samplesheet_upload():
     """
     Uploads file to an upload directory, runs verification checks on the file and removes the file or moves it to a
     passed directory depending on the outputs of the checks. Outputs of checks displayed on the rendered template.
@@ -47,9 +79,9 @@ def upload_files():
     filename = secure_filename(uploaded_file.filename)
     messages = []
     # assign empty variables so if 'submit' is clicked with no input file the webpage doesn't break
-    if filename != '':
-        samplesheet_path = os.path.join(ss_dir, filename)
-        # save the file to the samplesheet folder
+    samplesheet_path = os.path.join(ss_dir, filename)
+    # if file has been supplied and file doesn't already exist in samplesheet folder, save to folder
+    if filename != '' and not os.path.exists(samplesheet_path):
         uploaded_file.save(samplesheet_path)
 
         ss_verification_results = samplesheet_verifier.run_ss_checks(samplesheet_path)
@@ -70,8 +102,12 @@ def upload_files():
             else:
                 messages.append({"Pass": ss_verification_results[key][1]})
     else:
-        result = "No file provided"
-        instructions = "Please upload a file"
+        if filename=='':
+            result = "No file provided"
+            instructions = "Please upload a file"
+        elif os.path.exists(samplesheet_path):
+            result = "Samplesheet already uploaded"
+            instructions = "No further actions required"
         colour = "red"
     return render_template('index.html', result=result, instructions = instructions, messages=messages,
                            app_version=git_tag(), txt_colour=colour, uploaded_file=filename)

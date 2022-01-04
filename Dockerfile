@@ -6,7 +6,11 @@ LABEL author="Rachel Duffin" \
 
 RUN apt-get update -y && \
     apt-get install -y apt-utils python3-pip python-dev && \
-    git clone --recurse-submodules git://github.com/moka-guys/soteria.git --branch incorporate_ss_verifier_script
+    git clone --recurse-submodules git://github.com/moka-guys/soteria.git --branch incorporate_ss_verifier_script && \
+    touch /.dnanexus_auth_token && \
+    touch /.amazon_email_pw && \
+    touch /.smartsheet_auth_token && \
+    touch /.amazon_email_username
 
 WORKDIR /soteria
 

@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}
+<hr/>
+  <form method="POST" action="" enctype="multipart/form-data" style="padding-left:10px">
+    <p><input type="file" name="file"></p>
+    <p><input type="submit" value="Submit"></p>
+  </form>
+<hr/>
+  <h2 style = "color:{{txt_colour}}">RESULT: {{result}} {{uploaded_file}}</h2>
+  <h3> {{instructions}} </h3>
+    <table style="background-color:#ececee;padding:10px;border-spacing:20px 5px;border:2px solid #465a81">
+      {% for item in messages %}
+        {% for key, value in item.items() %}
+        <tr>
+          <td> {{ key }} </td>
+          <td> {{ value }} </td>
+        <tr/>
+        {% endfor %}
+      {% endfor %}
+      </div>
+{% endblock %}
