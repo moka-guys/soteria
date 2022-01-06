@@ -36,11 +36,11 @@ class register_form(FlaskForm):
         ]
     )
     def validate_name(self, firstname, surname):
-        if models.User.query.filter_by(firstname=firstname.data, surname=surname.data).first():
-            raise ValidationError("Email already registered!")
+        if models.User.query.filter_by(FirstName=firstname.data, Surname=surname.data).first():
+            raise ValidationError("Username already registered!")
 
     def validate_email(self, email):
-        if models.User.query.filter_by(email=email.data).first():
+        if models.User.query.filter_by(Email=email.data).first():
             raise ValidationError("Email already registered!")
 
 class login_form(FlaskForm):
@@ -48,5 +48,12 @@ class login_form(FlaskForm):
     pwd = PasswordField(validators=[InputRequired(), Length(min=8, max=72)])
     # Placeholder labels to enable form rendering
     username = StringField(
+        validators=[Optional()]
+    )
+
+class password_reset_form(FlaskForm):
+    pwd = PasswordField(validators=[InputRequired(), Length(min=8, max=72)])
+    # Placeholder labels to enable form rendering
+    cpwd = PasswordField(
         validators=[Optional()]
     )

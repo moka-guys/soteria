@@ -22,7 +22,11 @@ from flask_migrate import Migrate
 login_manager = LoginManager()
 login_manager.session_protection = 'strong'
 login_manager.login_view = "login"
+login_manager.refresh_view = 'login'
 login_manager.login_message_category = "info"
+login_manager.needs_refresh_message = ("Session timeout, please re-login")
+login_manager.needs_refresh_message_category = "info"
+
 
 db = SQLAlchemy()
 

@@ -17,8 +17,17 @@
 {% endif %}
 {% endwith %}
 
-{% if request.path == '/register/' %}
 
+{% if request.path =='/' %}
+    <h6 style="color:#007bff">Please login below:</h6>
+{% endif%}
+
+{% if request.path =='/password_reset/' %}
+    <h6 style="color:#007bff">Please reset your password below:</h6>
+{% endif%}
+
+{% if request.path == '/register/' %}
+<h6 style="color:#007bff">Please register below:</h6>
 {{ form.firstname(class_="form-control",placeholder="First Name")}}
 
 {% for error in form.firstname.errors %}
@@ -33,11 +42,14 @@
 
 {% endif%}
 
+{% if request.path != '/password_reset/' %}
 {{ form.email(class_="form-control",placeholder="Email")}}
 
 {% for error in form.email.errors %}
 {{ error }}
 {% endfor%}
+
+{% endif%}
 
 {{ form.pwd(class_="form-control",placeholder="Password")}}
 
@@ -45,7 +57,7 @@
 {{ error }}
 {% endfor%}
 
-{% if request.path == '/register/' %}
+{% if request.path in ('/register/', '/password_reset/') %}
 {{ form.cpwd(class_="form-control",placeholder="Confirm Password")}}
 
 {% for error in form.cpwd.errors %}

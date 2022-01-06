@@ -17,7 +17,7 @@
 
 <div class="header">
   <h4 style="text-align: right">moka-guys/soteria {{ app_version }} </h4>
-      <h4 style="text-align: right; font-size:20px; color:#465a81">{% if current_user.is_authenticated %}
+      <h4 style="text-align: right; font-size:20px; color:#007bff">{% if current_user.is_authenticated %}
       <i> User: {{ user }} </i><br>
       <a href="{{ url_for('logout') }}" class="icon-power" title="Log out">Logout</a>
       {% endif %}

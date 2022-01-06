@@ -4,7 +4,7 @@ import subprocess
 import os
 import imghdr
 import shutil
-from flask import Flask, render_template, request, redirect, url_for, abort, flash
+from flask import Flask, render_template, request, redirect, url_for, abort, flash, session
 from flask_login import login_required, login_user, logout_user, current_user
 from is_safe_url import is_safe_url
 from werkzeug.utils import secure_filename
@@ -18,34 +18,16 @@ from soteria import db, login_manager
 
 soteria = soteria.create_app()
 
-def git_tag():
-    """
-    Return script release version number by reading directly from repository.
-        :return: (str) returns version number of current script release
-    Execute command via subprocess that prints git tags for git repository (e.g. v22-3-gccfd) and extracts version
-    number (create array "a" using awk, split on "-" and print first element of array). Return standard out, removing
-    newline characters
-    """
-    cmd = "git -C " + os.path.dirname(os.path.realpath(__file__)) + \
-          " describe --tags | awk '{split($0,a,\"-\"); print a[1]}'"
-    proc = subprocess.Popen([cmd], stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
-    out, err = proc.communicate()
-    return out.rstrip().decode('utf-8')
-
-def get_username():
-    if current_user.is_authenticated:
-        user = current_user.firstname + " " + current_user.surname
-    else:
-        user = False
-    return user
-
+@soteria.before_request
+def before_request():
+    session.permanent = True
 
 @login_manager.user_loader
-def load_user(user_id):
-    return models.User.query.get(int(user_id)) # Fetch the user from the database
+def load_user(UserID):
+    return models.User.query.get(int(UserID)) # Fetch the user from the database
 
 # Register route
-@soteria.route("/register/", methods=("GET", "POST"), strict_slashes=False)
+@soteria.route("/register/", methods=["GET", "POST"], strict_slashes=False)
 def register():
     form = forms.register_form()
     if form.validate_on_submit():
@@ -56,10 +38,10 @@ def register():
             surname = form.surname.data
 
             newuser = models.User(
-                firstname=firstname,
-                surname=surname,
-                email=email,
-                pwd=generate_password_hash(pwd),
+                FirstName=firstname,
+                Surname=surname,
+                Email=email,
+                PHash=generate_password_hash(pwd)
             )
 
             db.session.add(newuser)
@@ -79,7 +61,7 @@ def login():
     user = get_username()
 
     if current_user.is_authenticated:
-        form.email.data = current_user.email
+        form.email.data = current_user.Email
 
     if request.method == 'GET' and current_user.is_authenticated:
         return redirect(url_for('samplesheet_upload'))
@@ -89,14 +71,15 @@ def login():
         # Login and validate the user.
              try:
                 # retrieves the user from the database and from this the hashed password can be accessed
-                user = models.User.query.filter_by(email=form.email.data).first()
-                if check_password_hash(user.pwd, form.pwd.data):
+                user = models.User.query.filter_by(Email=form.email.data).first()
+                if check_password_hash(user.PHash, form.pwd.data):
                     login_user(user)
                     flash('Logged in successfully.')
 
                     # record the login in the database
                     newlogin = models.Logins(
-                        user_email=form.email.data
+                        UserEmail=form.email.data,
+                        UserID = current_user.UserID
                     )
                     db.session.add(newlogin)
                     db.session.commit()
@@ -108,7 +91,13 @@ def login():
              except Exception as e:
                  flash(e, "danger")
     # redirects to login page from base url
-    return render_template('login.html', form=form, app_version=git_tag(), user=user)
+    return render_template('login.html', form=form, app_version=git_tag(), user=get_username())
+
+# Password reset route
+@soteria.route("/password_reset/", methods=["GET", "POST"], strict_slashes=False)
+def password_reset():
+    form = forms.password_reset_form()
+    return render_template("login.html", form=form, app_version=git_tag())
 
 # logout route
 @soteria.route("/logout")
@@ -128,7 +117,7 @@ def samplesheet_upload():
     """
     user = get_username()
     if request.method == 'GET':
-        return render_template('samplesheet_upload.html', app_version=git_tag(), user=user)
+        return render_template('samplesheet_upload.html', app_version=git_tag(), user=get_username())
     elif request.method == 'POST':
         ss_dir = soteria.config['SS_DIR']
 
@@ -165,7 +154,7 @@ def samplesheet_upload():
                 instructions = "No further actions required"
     return render_template('samplesheet_upload.html', result=result, instructions=instructions, messages=messages,
                            app_version=git_tag(), txt_colour=colour, uploaded_file=filename,
-                           user=user)
+                           user=get_username())
 
 def check_file_selected(filename):
     if filename != '':
@@ -202,9 +191,10 @@ def verify_samplesheet(samplesheet_path, messages):
         colour = "green"
 
         # record the upload in database
-        newupload = models.File_upload(
-            user_email=current_user.email,
-            file=samplesheet_path
+        newupload = models.FileUpload(
+            UserEmail=current_user.Email,
+            FilePath=samplesheet_path,
+            UserID=current_user.UserID
         )
 
         db.session.add(newupload)
@@ -217,6 +207,27 @@ def verify_samplesheet(samplesheet_path, messages):
         else:
             messages.append({"Pass": ss_verification_results[key][1]})
     return result, instructions, colour, messages
+
+def git_tag():
+    """
+    Return script release version number by reading directly from repository.
+        :return: (str) returns version number of current script release
+    Execute command via subprocess that prints git tags for git repository (e.g. v22-3-gccfd) and extracts version
+    number (create array "a" using awk, split on "-" and print first element of array). Return standard out, removing
+    newline characters
+    """
+    cmd = "git -C " + os.path.dirname(os.path.realpath(__file__)) + \
+          " describe --tags | awk '{split($0,a,\"-\"); print a[1]}'"
+    proc = subprocess.Popen([cmd], stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
+    out, err = proc.communicate()
+    return out.rstrip().decode('utf-8')
+
+def get_username():
+    if current_user.is_authenticated:
+        user = current_user.FirstName + " " + current_user.Surname
+    else:
+        user = False
+    return user
 
 
 if __name__ == "__main__":
