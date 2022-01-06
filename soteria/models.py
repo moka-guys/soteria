@@ -9,7 +9,9 @@ class User(UserMixin, db.Model):
     Surname=db.Column(db.String(80), unique=True, nullable=False)
     Email = db.Column(db.String(120), unique=True, nullable=False)
     PHash = db.Column(db.String(300), nullable=False, unique=True)
-    CreatedDateTime = db.Column(db.DateTime, server_default=db.func.now())
+    RegisteredOn = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
+    Confirmed = db.Column(db.Boolean, nullable=False)
+    ConfirmedOn = db.Column(db.DateTime, nullable=True)
 
     def get_id(self):
         return (self.UserID)
@@ -19,7 +21,6 @@ class Logins(db.Model):
 
     LoginID = db.Column(db.Integer, primary_key=True)
     UserID = db.Column(db.Integer, unique=False, nullable=False)
-    UserEmail = db.Column(db.String(120), unique=False, nullable=False)
     DateStamp = db.Column(db.DateTime, server_default=db.func.now())
 
     def get_id(self):
@@ -30,9 +31,8 @@ class FileUpload(db.Model):
 
     FileID = db.Column(db.Integer, primary_key=True)
     UserID = db.Column(db.Integer, unique=False, nullable=False)
-    UserEmail = db.Column(db.String(120), unique=False, nullable=False)
     DateStamp = db.Column(db.DateTime, server_default=db.func.now())
+    FilePath = db.Column(db.String(120), unique=True, nullable=False)
 
     def get_id(self):
         return (self.FileID)
-    FilePath = db.Column(db.String(120), unique=True, nullable=False)

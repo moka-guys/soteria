@@ -17,6 +17,7 @@ from config import Config
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_mail import Mail
 
 # create flask login instance
 login_manager = LoginManager()
@@ -24,11 +25,11 @@ login_manager.session_protection = 'strong'
 login_manager.login_view = "login"
 login_manager.refresh_view = 'login'
 login_manager.login_message_category = "info"
-login_manager.needs_refresh_message = ("Session timeout, please re-login")
+login_manager.needs_refresh_message = "Session timeout, please re-login"
 login_manager.needs_refresh_message_category = "info"
 
-
 db = SQLAlchemy()
+mail = Mail()
 
 def create_app():
     """
@@ -43,21 +44,26 @@ def create_app():
     # Import app configuration
     app.config.from_object(Config())
 
-    # Import hidden keys
-    script_dir = os.path.dirname(__file__)
-    secret_key_relpath = "../.secretkeys"
-    secret_key_abspath = os.path.join(script_dir, secret_key_relpath)
-
-    with open(secret_key_abspath, "r") as keys:
+    # Import soteria hidden keys
+    with open(app.config['SOTERIA_SECRETKEYS'], "r") as keys:
         for line in keys.readlines():
             if "MAIN_SECRET_KEY" in line:
                 app.config['SECRET_KEY'] = line.split('\'')[1]
             elif "WTF_CSRF_SECRET_KEY" in line:
                 app.config['WTF_CSRF_SECRET_KEY'] = line.split('\'')[1]
+            elif "SECURITY_PASSWORD_SALT" in line:
+                app.config['SECURITY_PASSWORD_SALT'] = line.split('\'')[1]
+
+    # set smtp server password and username
+    with open(app.config['AMAZON_USERNAME_FILE'], "r") as email_username_file:
+        app.config['MAIL_USERNAME'] = email_username_file.readline().rstrip()
+    with open(app.config['AMAZON_PW_FILE'], "r") as email_password_file:
+        app.config['MAIL_PASSWORD'] = email_password_file.readline().rstrip()
 
     # Initialize Plugins
     login_manager.init_app(app)
     db.init_app(app)
     migrate.init_app(app, db)
+    mail.init_app(app)
 
     return app

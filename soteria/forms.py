@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import InputRequired, Email, Length, Regexp, EqualTo, Optional, ValidationError
+from wtforms.validators import InputRequired, DataRequired, Email, Length, Regexp, EqualTo, Optional, ValidationError
 import models
 
 class register_form(FlaskForm):
@@ -51,7 +51,11 @@ class login_form(FlaskForm):
         validators=[Optional()]
     )
 
+class ResetPasswordRequestForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+
 class password_reset_form(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
     pwd = PasswordField(validators=[InputRequired(), Length(min=8, max=72)])
     # Placeholder labels to enable form rendering
     cpwd = PasswordField(

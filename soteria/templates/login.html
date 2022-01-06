@@ -6,15 +6,15 @@
 {{ form.csrf_token }}
 
 {% with messages = get_flashed_messages(with_categories=true) %}
-<!-- Categories: success (green), info (blue), warning (yellow), danger (red) -->
-{% if messages %}
-{% for category, message in messages %}
-<div class="alert alert-{{category}} alert-dismissible fade show" role="alert">
-{{ message }}
-<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-</div>
-{% endfor %}
-{% endif %}
+    <!-- Categories: success (green), info (blue), warning (yellow), danger (red) -->
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{category}} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+        {% endfor %}
+    {% endif %}
 {% endwith %}
 
 
@@ -22,62 +22,74 @@
     <h6 style="color:#007bff">Please login below:</h6>
 {% endif%}
 
+{% if request.path =='/password_reset_request/' %}
+    <h6 style="color:#007bff">Please enter your email below to reset your password</h6>
+{% endif%}
+
 {% if request.path =='/password_reset/' %}
-    <h6 style="color:#007bff">Please reset your password below:</h6>
+    <h6 style="color:#007bff">Please reset your password below</h6>
 {% endif%}
 
 {% if request.path == '/register/' %}
-<h6 style="color:#007bff">Please register below:</h6>
-{{ form.firstname(class_="form-control",placeholder="First Name")}}
+    <h6 style="color:#007bff">Please register below:</h6>
 
-{% for error in form.firstname.errors %}
-{{ error }}
-{% endfor%}
+    {{ form.firstname(class_="form-control",placeholder="First Name")}}
+    {% for error in form.firstname.errors %}
+        {{ error }}
+    {% endfor%}
 
-{{ form.surname(class_="form-control",placeholder="Last Name")}}
-
-{% for error in form.surname.errors %}
-{{ error }}
-{% endfor%}
+    {{ form.surname(class_="form-control",placeholder="Last Name")}}
+    {% for error in form.surname.errors %}
+        {{ error }}
+    {% endfor%}
 
 {% endif%}
 
 {% if request.path != '/password_reset/' %}
-{{ form.email(class_="form-control",placeholder="Email")}}
-
-{% for error in form.email.errors %}
-{{ error }}
-{% endfor%}
-
+    {{ form.email(class_="form-control",placeholder="Email")}}
+    {% for error in form.email.errors %}
+    {{ error }}
+    {% endfor%}
 {% endif%}
 
-{{ form.pwd(class_="form-control",placeholder="Password")}}
+{% if request.path != '/password_reset_request/' %}
+    {{ form.pwd(class_="form-control",placeholder="Password")}}
 
-{% for error in form.pwd.errors %}
-{{ error }}
-{% endfor%}
+    {% for error in form.pwd.errors %}
+        {{ error }}
+    {% endfor%}
 
-{% if request.path in ('/register/', '/password_reset/') %}
-{{ form.cpwd(class_="form-control",placeholder="Confirm Password")}}
+    {% if request.path in ('/register/', '/password_reset/') %}
+        {{ form.cpwd(class_="form-control",placeholder="Confirm Password")}}
 
-{% for error in form.cpwd.errors %}
-{{ error }}
-{% endfor%}
+        {% for error in form.cpwd.errors %}
+            {{ error }}
+        {% endfor%}
 
+    {% endif%}
 {% endif%}
 
-<button type="submit" class="btn btn-block btn-primary mb-3"> Login
+<button type="submit" class="btn btn-block btn-primary mb-3"> Submit
 {{ btn_action }}
 </button>
 
 <p>
-{% if request.path != '/register/' %}
-New here?
-<a href="{{url_for('register')}}">Create account</a>
-{% else %}
-Already have an account?
-<a href="{{url_for('login')}}">Login</a>
+{% if request.path not in ('/register/', '/password_reset/') %}
+    New here?
+    <a href="{{url_for('register')}}">Create account</a>
+    <br>
 {% endif %}
-</p>
+
+{% if request.path not in ('/password_reset/', '/') %}
+    Already have an account?
+    <a href="{{url_for('login')}}">Login</a>
+    <br>
+{% endif %}
+
+{% if request.path in ('/', '/register/')  %}
+    Forgotten your password?
+    <a href="{{url_for('password_reset_request')}}">Reset password</a>
+    </p>
+{% endif %}
 
 {% endblock %}

@@ -4,7 +4,7 @@ import subprocess
 import os
 import imghdr
 import shutil
-from flask import Flask, render_template, request, redirect, url_for, abort, flash, session
+from flask import Flask, render_template, request, redirect, url_for, abort, flash, session, get_flashed_messages
 from flask_login import login_required, login_user, logout_user, current_user
 from is_safe_url import is_safe_url
 from werkzeug.utils import secure_filename
@@ -14,7 +14,13 @@ import functools
 import soteria
 import forms
 import models
-from soteria import db, login_manager
+from soteria import db, login_manager, mail
+from threading import Thread
+from flask_mail import Message
+from itsdangerous import URLSafeTimedSerializer
+import time
+import datetime
+from decorators import check_confirmed
 
 soteria = soteria.create_app()
 
@@ -32,33 +38,89 @@ def register():
     form = forms.register_form()
     if form.validate_on_submit():
         try:
-            email = form.email.data
-            pwd = form.pwd.data
-            firstname = form.firstname.data
-            surname = form.surname.data
-
             newuser = models.User(
-                FirstName=firstname,
-                Surname=surname,
-                Email=email,
-                PHash=generate_password_hash(pwd)
+                FirstName=form.firstname.data,
+                Surname=form.surname.data,
+                Email=form.email.data,
+                PHash=generate_password_hash(form.pwd.data),
+                Confirmed=False
             )
 
             db.session.add(newuser)
             db.session.commit()
-            flash("Account Succesfully created", "success")
-            return redirect(url_for("login"))
+
+            login_user(newuser)
+
+            send_email(create_registration_confirmation_email(newuser.Email))
+            flash('A confirmation email has been sent via email.', 'success')
 
         except Exception as e:
             flash(e, "danger")
+        return redirect(url_for("unconfirmed"))
 
     return render_template("login.html", form=form, app_version=git_tag())
+
+
+@soteria.route('/resend_confirmation')
+@login_required
+def resend_confirmation():
+    send_email(create_registration_confirmation_email(current_user.Email))
+    flash('A new confirmation email has been sent.', 'success')
+    return redirect(url_for('unconfirmed'))
+
+
+# registration confirmation using email link
+@soteria.route('/confirm/<token>')
+def confirm_email(token):
+    try:
+        email = confirm_token(token)
+    except:
+        flash('The confirmation link is invalid or has expired.', 'danger')
+    user = models.User.query.filter_by(Email=email).first_or_404()
+    if user.Confirmed:
+        flash('Account already confirmed. Please login.', 'success')
+    else:
+        user.Confirmed = True
+        user.ConfirmedOn = datetime.datetime.now()
+        db.session.add(user)
+        db.session.commit()
+        flash('You have confirmed your account. Account has now been successfully created', 'success')
+    return redirect(url_for('login'))
+
+
+@soteria.route('/unconfirmed')
+def unconfirmed():
+    if current_user.Confirmed:
+        return redirect(url_for('samplesheet_upload'))
+    flash('Please confirm your account!', 'warning')
+    return render_template('unconfirmed.html', pp_version=git_tag(), user=get_username())
+
+# Password reset request route
+@soteria.route("/password_reset_request/", methods=["GET", "POST"], strict_slashes=False)
+def password_reset_request():
+    if current_user.is_authenticated:
+        return redirect(url_for('samplesheet_upload'))
+    form = forms.ResetPasswordRequestForm()
+    if form.validate_on_submit():
+        user =  models.User.query.filter_by(Email=form.email.data).first()
+        if user:
+            send_email(create_password_reset_email(form.email.data))
+            flash('Check your email for the instructions to reset your password')
+            return redirect(url_for('login'))
+    return render_template("login.html", form=form, app_version=git_tag())
+
+
+# Password reset route
+@soteria.route("/password_reset/", methods=["GET", "POST"], strict_slashes=False)
+def password_reset():
+    form = forms.password_reset_form()
+    return render_template("login.html", form=form, app_version=git_tag())
+
 
 # login route (& home route)
 @soteria.route('/', methods=['GET','POST'], strict_slashes=False)
 def login():
     form = forms.login_form()
-    user = get_username()
 
     if current_user.is_authenticated:
         form.email.data = current_user.Email
@@ -78,7 +140,6 @@ def login():
 
                     # record the login in the database
                     newlogin = models.Logins(
-                        UserEmail=form.email.data,
                         UserID = current_user.UserID
                     )
                     db.session.add(newlogin)
@@ -93,29 +154,26 @@ def login():
     # redirects to login page from base url
     return render_template('login.html', form=form, app_version=git_tag(), user=get_username())
 
-# Password reset route
-@soteria.route("/password_reset/", methods=["GET", "POST"], strict_slashes=False)
-def password_reset():
-    form = forms.password_reset_form()
-    return render_template("login.html", form=form, app_version=git_tag())
 
 # logout route
 @soteria.route("/logout")
 @login_required
+@check_confirmed
 def logout():
     logout_user()
     flash('Logged out successfully.')
     return redirect(url_for('login'))
 
+
 # samplesheet upload route
 @soteria.route('/samplesheet_upload', methods=['GET','POST'])
 @login_required
+@check_confirmed
 def samplesheet_upload():
     """
     Uploads file to an upload directory, runs verification checks on the file and removes the file or moves it to a
     passed directory depending on the outputs of the checks. Outputs of checks displayed on the rendered template.
     """
-    user = get_username()
     if request.method == 'GET':
         return render_template('samplesheet_upload.html', app_version=git_tag(), user=get_username())
     elif request.method == 'POST':
@@ -156,17 +214,49 @@ def samplesheet_upload():
                            app_version=git_tag(), txt_colour=colour, uploaded_file=filename,
                            user=get_username())
 
-def check_file_selected(filename):
-    if filename != '':
-        return True
+def generate_token(email):
+    serializer = URLSafeTimedSerializer(soteria.config['SECRET_KEY'])
+    return serializer.dumps(email, salt=soteria.config['SECURITY_PASSWORD_SALT'])
 
-def check_correct_file_ending(filename):
-    if re.compile("^.*\.csv$").match(filename):
-        return True
+def confirm_token(token, expiration=1800):
+    # token expires after 30 minutes
+    serializer = URLSafeTimedSerializer(soteria.config['SECRET_KEY'])
+    try:
+        email = serializer.loads(
+            token,
+            salt=soteria.config['SECURITY_PASSWORD_SALT'],
+            max_age=expiration
+        )
+    except:
+        return False
+    return email
 
-def check_new_file(samplesheet_path):
-    if not os.path.exists(samplesheet_path):
-        return True
+def send_email(msg):
+    mail.send(msg)
+
+def create_password_reset_email(email):
+    token = generate_token(email)
+    password_reset_url = url_for('confirm_email', token=token, _external=True)
+
+    msg = Message()
+    msg.subject = "Soteria password reset link"
+    msg.recipients = [email]
+    msg.sender = "moka.alerts@gstt.nhs.uk"
+    msg.html = render_template('email.html', password_reset_url=password_reset_url)
+    Thread(target=send_email, args=(soteria, msg)).start()
+    return msg
+
+def create_registration_confirmation_email(email):
+    token = generate_token(email)
+    confirm_url = url_for('confirm_email', token=token, _external=True)
+
+    msg = Message()
+    msg.subject = "Please confirm your email"
+    msg.recipients = [email]
+    msg.sender = 'moka.alerts@gstt.nhs.uk'
+    msg.html = render_template('email.html', token=token, confirm_url=confirm_url)
+    Thread(target=send_email, args=(soteria, msg)).start()
+    return msg
 
 def verify_samplesheet(samplesheet_path, messages):
 
@@ -192,7 +282,6 @@ def verify_samplesheet(samplesheet_path, messages):
 
         # record the upload in database
         newupload = models.FileUpload(
-            UserEmail=current_user.Email,
             FilePath=samplesheet_path,
             UserID=current_user.UserID
         )
@@ -207,6 +296,18 @@ def verify_samplesheet(samplesheet_path, messages):
         else:
             messages.append({"Pass": ss_verification_results[key][1]})
     return result, instructions, colour, messages
+
+def check_file_selected(filename):
+    if filename != '':
+        return True
+
+def check_correct_file_ending(filename):
+    if re.compile("^.*\.csv$").match(filename):
+        return True
+
+def check_new_file(samplesheet_path):
+    if not os.path.exists(samplesheet_path):
+        return True
 
 def git_tag():
     """

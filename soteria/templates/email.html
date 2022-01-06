@@ -1,0 +1,14 @@
+{% if request.path == '/password_reset_request/' %}
+    You requested that the password for your Soteria account be reset.
+    Please click the link below to reset your password:
+
+    <p>
+    <a href="{{ password_reset_url }}">{{ password_reset_url }}</a>
+    </p>
+{% endif%}
+
+{% if request.path in ('/register/','/resend_confirmation') %}
+    <p>Thanks for signing up to Soteria. Please follow this link to activate your account:</p>
+    <p><a href="{{ confirm_url }}">{{ confirm_url }}</a></p>
+
+{% endif%}
