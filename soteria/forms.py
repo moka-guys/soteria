@@ -55,9 +55,12 @@ class ResetPasswordRequestForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
 
 class password_reset_form(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()])
     pwd = PasswordField(validators=[InputRequired(), Length(min=8, max=72)])
     # Placeholder labels to enable form rendering
     cpwd = PasswordField(
-        validators=[Optional()]
+        validators=[
+            InputRequired(),
+            Length(8, 72),
+            EqualTo("pwd", message="Passwords must match !"),
+        ]
     )

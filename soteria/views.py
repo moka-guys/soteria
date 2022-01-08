@@ -1,28 +1,21 @@
-import sys
-import re
-import subprocess
-import os
-import imghdr
-import shutil
-from flask import Flask, render_template, request, redirect, url_for, abort, flash, session, get_flashed_messages
-from flask_login import login_required, login_user, logout_user, current_user
-from is_safe_url import is_safe_url
-from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
-from collections import OrderedDict
-import functools
-import soteria
+import datetime
 import forms
 import models
-from soteria import db, login_manager, mail
-from threading import Thread
+import os
+import re
+from soteria import db, login_manager, mail, create_app
+import subprocess
+import sys
+from decorators import check_confirmed
+from flask import render_template, request, redirect, url_for, abort, flash, session
+from flask_login import login_required, login_user, logout_user, current_user
 from flask_mail import Message
 from itsdangerous import URLSafeTimedSerializer
-import time
-import datetime
-from decorators import check_confirmed
+from threading import Thread
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 
-soteria = soteria.create_app()
+soteria = create_app()
 
 @soteria.before_request
 def before_request():
@@ -51,7 +44,7 @@ def register():
 
             login_user(newuser)
 
-            send_email(create_registration_confirmation_email(newuser.Email))
+            send_email(create_confirmation_email(newuser.Email))
             flash('A confirmation email has been sent via email.', 'success')
 
         except Exception as e:
@@ -64,7 +57,7 @@ def register():
 @soteria.route('/resend_confirmation')
 @login_required
 def resend_confirmation():
-    send_email(create_registration_confirmation_email(current_user.Email))
+    send_email(create_confirmation_email(current_user.Email))
     flash('A new confirmation email has been sent.', 'success')
     return redirect(url_for('unconfirmed'))
 
@@ -105,15 +98,33 @@ def password_reset_request():
         user =  models.User.query.filter_by(Email=form.email.data).first()
         if user:
             send_email(create_password_reset_email(form.email.data))
-            flash('Check your email for the instructions to reset your password')
+            flash('Check your email for the instructions to reset your password', "success")
             return redirect(url_for('login'))
     return render_template("login.html", form=form, app_version=git_tag())
 
 
 # Password reset route
-@soteria.route("/password_reset/", methods=["GET", "POST"], strict_slashes=False)
-def password_reset():
+@soteria.route("/password_reset/<token>", methods=["GET", "POST"], strict_slashes=False)
+def password_reset(token):
+    email = confirm_token(token)
     form = forms.password_reset_form()
+    if form.validate_on_submit():
+        try:
+            user =  models.User.query.filter_by(Email=email).first()
+            # record the login in the database
+            user.PHash = generate_password_hash(form.pwd.data)
+            user.Confirmed = False
+            db.session.add(user)
+            db.session.commit()
+
+            user = models.User.query.filter_by(Email=user.Email).first()
+            send_email(create_confirmation_email(user.Email))
+            flash('A confirmation email has been sent via email.', 'success')
+            login_user(user)
+        except Exception as e:
+            flash(e, "danger")
+        return redirect(url_for("unconfirmed"))
+
     return render_template("login.html", form=form, app_version=git_tag())
 
 
@@ -134,21 +145,24 @@ def login():
              try:
                 # retrieves the user from the database and from this the hashed password can be accessed
                 user = models.User.query.filter_by(Email=form.email.data).first()
-                if check_password_hash(user.PHash, form.pwd.data):
-                    login_user(user)
-                    flash('Logged in successfully.')
-
-                    # record the login in the database
-                    newlogin = models.Logins(
-                        UserID = current_user.UserID
-                    )
-                    db.session.add(newlogin)
-                    db.session.commit()
-
-                    # redirects to samplesheet page upon login
-                    return redirect(url_for('samplesheet_upload'))
+                if not user:
+                    flash("This email address is not registered. Please create an account.", "danger")
                 else:
-                    flash("Invalid Username or password!", "danger")
+                    if check_password_hash(user.PHash, form.pwd.data):
+                        login_user(user)
+                        flash('Logged in successfully.', "success")
+
+                        # record the login in the database
+                        newlogin = models.Logins(
+                            UserID = current_user.UserID
+                        )
+                        db.session.add(newlogin)
+                        db.session.commit()
+
+                        # redirects to samplesheet page upon login
+                        return redirect(url_for('samplesheet_upload'))
+                    else:
+                        flash("Invalid Username or password!", "danger")
              except Exception as e:
                  flash(e, "danger")
     # redirects to login page from base url
@@ -161,7 +175,7 @@ def login():
 @check_confirmed
 def logout():
     logout_user()
-    flash('Logged out successfully.')
+    flash('Logged out successfully.', "success")
     return redirect(url_for('login'))
 
 
@@ -214,50 +228,6 @@ def samplesheet_upload():
                            app_version=git_tag(), txt_colour=colour, uploaded_file=filename,
                            user=get_username())
 
-def generate_token(email):
-    serializer = URLSafeTimedSerializer(soteria.config['SECRET_KEY'])
-    return serializer.dumps(email, salt=soteria.config['SECURITY_PASSWORD_SALT'])
-
-def confirm_token(token, expiration=1800):
-    # token expires after 30 minutes
-    serializer = URLSafeTimedSerializer(soteria.config['SECRET_KEY'])
-    try:
-        email = serializer.loads(
-            token,
-            salt=soteria.config['SECURITY_PASSWORD_SALT'],
-            max_age=expiration
-        )
-    except:
-        return False
-    return email
-
-def send_email(msg):
-    mail.send(msg)
-
-def create_password_reset_email(email):
-    token = generate_token(email)
-    password_reset_url = url_for('confirm_email', token=token, _external=True)
-
-    msg = Message()
-    msg.subject = "Soteria password reset link"
-    msg.recipients = [email]
-    msg.sender = "moka.alerts@gstt.nhs.uk"
-    msg.html = render_template('email.html', password_reset_url=password_reset_url)
-    Thread(target=send_email, args=(soteria, msg)).start()
-    return msg
-
-def create_registration_confirmation_email(email):
-    token = generate_token(email)
-    confirm_url = url_for('confirm_email', token=token, _external=True)
-
-    msg = Message()
-    msg.subject = "Please confirm your email"
-    msg.recipients = [email]
-    msg.sender = 'moka.alerts@gstt.nhs.uk'
-    msg.html = render_template('email.html', token=token, confirm_url=confirm_url)
-    Thread(target=send_email, args=(soteria, msg)).start()
-    return msg
-
 def verify_samplesheet(samplesheet_path, messages):
 
     automated_scripts = soteria.config['AUTOMATED_SCRIPTS']
@@ -308,6 +278,52 @@ def check_correct_file_ending(filename):
 def check_new_file(samplesheet_path):
     if not os.path.exists(samplesheet_path):
         return True
+
+
+
+def generate_token(email):
+    serializer = URLSafeTimedSerializer(soteria.config['SECRET_KEY'])
+    return serializer.dumps(email, salt=soteria.config['SECURITY_PASSWORD_SALT'])
+
+def confirm_token(token, expiration=1800):
+    # token expires after 30 minutes
+    serializer = URLSafeTimedSerializer(soteria.config['SECRET_KEY'])
+    try:
+        email = serializer.loads(
+            token,
+            salt=soteria.config['SECURITY_PASSWORD_SALT'],
+            max_age=expiration
+        )
+    except:
+        return False
+    return email
+
+def send_email(msg):
+    mail.send(msg)
+
+def create_password_reset_email(email):
+    token = generate_token(email)
+    password_reset_url = url_for('password_reset', token=token, _external=True)
+
+    msg = Message()
+    msg.subject = "Soteria password reset link"
+    msg.recipients = [email]
+    msg.sender = "moka.alerts@gstt.nhs.uk"
+    msg.html = render_template('email.html', password_reset_url=password_reset_url)
+    Thread(target=send_email, args=(soteria, msg)).start()
+    return msg
+
+def create_confirmation_email(email):
+    token = generate_token(email)
+    confirm_url = url_for('confirm_email', token=token, _external=True)
+
+    msg = Message()
+    msg.subject = "Please confirm your email"
+    msg.recipients = [email]
+    msg.sender = 'moka.alerts@gstt.nhs.uk'
+    msg.html = render_template('email.html', token=token, confirm_url=confirm_url)
+    Thread(target=send_email, args=(soteria, msg)).start()
+    return msg
 
 def git_tag():
     """

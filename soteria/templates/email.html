@@ -12,3 +12,9 @@
     <p><a href="{{ confirm_url }}">{{ confirm_url }}</a></p>
 
 {% endif%}
+
+{% if '/password_reset/' in request.path %}
+    Password has been successfully reset. Please follow the link below to reactivate your account:
+    <p><a href="{{ confirm_url }}">{{ confirm_url }}</a></p>
+
+{% endif%}

@@ -5,32 +5,19 @@
 
 {{ form.csrf_token }}
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-    <!-- Categories: success (green), info (blue), warning (yellow), danger (red) -->
-    {% if messages %}
-        {% for category, message in messages %}
-            <div class="alert alert-{{category}} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            </div>
-        {% endfor %}
-    {% endif %}
-{% endwith %}
-
-
-{% if request.path =='/' %}
+{% if request.path == '/' %}
     <h6 style="color:#007bff">Please login below:</h6>
 {% endif%}
 
-{% if request.path =='/password_reset_request/' %}
-    <h6 style="color:#007bff">Please enter your email below to reset your password</h6>
+{% if '/password_reset_request/' in request.path %}
+    <h6 style="color:#007bff">Please enter your email below to reset your password:</h6>
 {% endif%}
 
-{% if request.path =='/password_reset/' %}
+{% if '/password_reset/' == request.path %}
     <h6 style="color:#007bff">Please reset your password below</h6>
 {% endif%}
 
-{% if request.path == '/register/' %}
+{% if '/register/' == request.path %}
     <h6 style="color:#007bff">Please register below:</h6>
 
     {{ form.firstname(class_="form-control",placeholder="First Name")}}
@@ -45,29 +32,41 @@
 
 {% endif%}
 
-{% if request.path != '/password_reset/' %}
+{% if '/password_reset/' not in request.path %}
     {{ form.email(class_="form-control",placeholder="Email")}}
     {% for error in form.email.errors %}
     {{ error }}
     {% endfor%}
 {% endif%}
 
-{% if request.path != '/password_reset_request/' %}
+{% if '/password_reset_request/' not in request.path %}
     {{ form.pwd(class_="form-control",placeholder="Password")}}
 
     {% for error in form.pwd.errors %}
         {{ error }}
     {% endfor%}
 
-    {% if request.path in ('/register/', '/password_reset/') %}
-        {{ form.cpwd(class_="form-control",placeholder="Confirm Password")}}
-
-        {% for error in form.cpwd.errors %}
-            {{ error }}
-        {% endfor%}
-
-    {% endif%}
 {% endif%}
+
+{% if '/register/' in request.path %}
+    {{ form.cpwd(class_="form-control",placeholder="Confirm Password")}}
+
+    {% for error in form.cpwd.errors %}
+        {{ error }}
+    {% endfor%}
+
+{% endif%}
+
+{% if '/password_reset/' in request.path %}
+    {{ form.cpwd(class_="form-control",placeholder="Confirm Password")}}
+
+    {% for error in form.cpwd.errors %}
+        {{ error }}
+    {% endfor%}
+
+{% endif%}
+
+
 
 <button type="submit" class="btn btn-block btn-primary mb-3"> Submit
 {{ btn_action }}
