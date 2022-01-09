@@ -12,8 +12,6 @@ COPY apps/automate_demultiplex /apps/automate_demultiplex
 COPY .amazon_email_username /.amazon_email_username
 COPY .amazon_email_pw /.amazon_email_pw
 COPY .soteria_secretkeys /.soteria_secretkeys
-COPY .dnanexus_auth_token /.dnanexus_auth_token
-COPY .smartsheet_auth_token /.smartsheet_auth_token
 
 RUN apt update && \
     cd apps && \
@@ -21,7 +19,9 @@ RUN apt update && \
     python3 -m pip install setuptools==43.0.0 && \
     python3 -m pip install pip==19.1.1 && \
     cd soteria && \
-    python3 -m pip install -r package-requirements.txt
+    python3 -m pip install -r package-requirements.txt && \
+    touch /.dnanexus_auth_token && \
+    touch /.smartsheet_auth_token
 
 WORKDIR /apps/soteria/soteria
 
