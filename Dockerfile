@@ -13,6 +13,7 @@ COPY .amazon_email_username /.amazon_email_username
 COPY .amazon_email_pw /.amazon_email_pw
 COPY .soteria_secretkeys /.soteria_secretkeys
 COPY .dnanexus_auth_token /.dnanexus_auth_token
+COPY .smartsheet_auth_token /.smartsheet_auth_token
 
 RUN apt update && \
     cd apps && \
