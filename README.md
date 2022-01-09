@@ -13,6 +13,8 @@ Validates uploaded samplesheet and places it in the right location.
 ### Development mode
 In development mode, the script is run outside a docker image to enable changes to be easily made to the scripts.
 *TEST should be set to True in the Config*
+n.b. the production samplesheet directory path specified in the config file will only work inside the docker container 
+so there is no risk of accidentally writing to the live samplesheet folder in development mode. 
 
 Setup/running is as follows:
 
@@ -39,7 +41,7 @@ testing and production purposes (depending on the volumes provided).
 
 1. Clone the repository and then run the following commands to creat the docker image:
 ```
-docker build -t soteria:v1.0 -f Dockerfile /usr/local/src/mokaguys 
+sudo docker build -t soteria:v1.0 -f Dockerfile /usr/local/src/mokaguys
 ```
 
 This will not affect any existing database / migrations directory as these are not present within the repository. 

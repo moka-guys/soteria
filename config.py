@@ -4,7 +4,7 @@ from datetime import timedelta
 class Config(object):
     # in test mode the app is run as a normal flask app
     # in production mode the app is run within a docker container
-    TEST=True
+    TEST=False
 
     # set document root as 2 levels up from this file
     DOCUMENT_ROOT = "/".join(os.path.dirname(os.path.realpath(__file__)).split("/")[:-2])
