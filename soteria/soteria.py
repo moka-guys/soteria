@@ -11,7 +11,6 @@ __status__ = "Development"
 import sys
 sys.path.append("../")
 from flask import Flask
-sys.path.append("..")
 from config import Config
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy

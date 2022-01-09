@@ -6,15 +6,16 @@ class Config(object):
     # in production mode the app is run within a docker container
     TEST=True
 
-    if TEST:
-        DEBUG = True
-        SS_DIR = '/usr/local/src/mokaguys/development_area/soteria/samplesheets/'
-    else:
-        DEBUG = False
-        SS_DIR = ''
-
     # set document root as 2 levels up from this file
     DOCUMENT_ROOT = "/".join(os.path.dirname(os.path.realpath(__file__)).split("/")[:-2])
+
+    if TEST:
+        DEBUG = True
+        SS_DIR = '{}/development_area/soteria/samplesheets/'.format(DOCUMENT_ROOT)
+    else:
+        DEBUG = False
+        SS_DIR = '/apps/soteria/samplesheets/'
+
     # set locations for secret keys/usernames/passwords/other repos needed by the app
     AMAZON_USERNAME_FILE = "{}/.amazon_email_username".format(DOCUMENT_ROOT)
     AMAZON_PW_FILE = "{}/.amazon_email_pw".format(DOCUMENT_ROOT)

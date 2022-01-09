@@ -1,23 +1,26 @@
-FROM python:3.9
+FROM python:3.4.3
 
 LABEL author="Rachel Duffin" \
       description="Soteria v1.0" \
       maintainer="rachel.duffin2@nhs.net"
 
-RUN apt-get update -y && \
-    apt-get install -y apt-utils python3-pip python-dev && \
+# create apps directory to copy automate demultiplex into
+RUN mkdir apps
+
+# copy in automate demultiplex, secret keys
+COPY apps/automate_demultiplex /apps/automate_demultiplex
+COPY .amazon_email_username /.amazon_email_username
+COPY .amazon_email_pw /.amazon_email_pw
+COPY .soteria_secretkeys /.soteria_secretkeys
+
+RUN apt update && \
+    cd apps && \
     git clone --recurse-submodules git://github.com/moka-guys/soteria.git --branch incorporate_ss_verifier_script && \
-    touch /.dnanexus_auth_token && \
-    touch /.amazon_email_pw && \
-    touch /.smartsheet_auth_token && \
-    touch /.amazon_email_username
+    python3 -m pip install setuptools==43.0.0 && \
+    python3 -m pip install pip==19.1.1 && \
+    cd soteria && \
+    python3 -m pip install -r package-requirements.txt
 
-WORKDIR /soteria
-
-ENV STATIC_URL /soteria/static
-
-ENV STATIC_PATH /soteria/static
-
-RUN pip install -r package-requirements.txt
+WORKDIR /apps/soteria/soteria
 
 ENTRYPOINT [ "python3" ]
