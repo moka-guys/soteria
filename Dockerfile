@@ -5,24 +5,24 @@ LABEL author="Rachel Duffin" \
       maintainer="rachel.duffin2@nhs.net"
 
 # create apps directory to copy automate demultiplex into
-RUN mkdir apps
+RUN mkdir -p mokaguys/development_area
 
 # copy in automate demultiplex, secret keys
-COPY apps/automate_demultiplex /apps/automate_demultiplex
-COPY .amazon_email_username /.amazon_email_username
-COPY .amazon_email_pw /.amazon_email_pw
-COPY .soteria_secretkeys /.soteria_secretkeys
+COPY apps/automate_demultiplex /mokaguys/apps/automate_demultiplex
+COPY .amazon_email_username /mokaguys/.amazon_email_username
+COPY .amazon_email_pw /mokaguys/.amazon_email_pw
+COPY .soteria_secretkeys /mokaguys/.soteria_secretkeys
 
 RUN apt update && \
-    cd apps && \
+    cd /mokaguys/development_area && \
     git clone --recurse-submodules git://github.com/moka-guys/soteria.git --branch incorporate_ss_verifier_script && \
     python3 -m pip install setuptools==43.0.0 && \
     python3 -m pip install pip==19.1.1 && \
     cd soteria && \
     python3 -m pip install -r package-requirements.txt && \
-    touch /.dnanexus_auth_token && \
-    touch /.smartsheet_auth_token
+    touch /mokaguys/.dnanexus_auth_token && \
+    touch /mokaguys/.smartsheet_auth_token
 
-WORKDIR /apps/soteria/soteria
+WORKDIR /mokaguys/development_area/soteria/soteria
 
 ENTRYPOINT [ "python3" ]

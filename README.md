@@ -37,9 +37,9 @@ python3 soteria/views.py
 The app can be packaged into a docker container which can be created using the Dockerfile. The docker image is used for
 testing and production purposes (depending on the volumes provided).
 
-*Ensure Test = False in the config file before creating the docker image.*
+*Ensure DEBUG = False in the config file before creating the docker image.*
 
-1. Clone the repository and then run the following commands to creat the docker image:
+1. Clone the repository and then run the following commands to create the docker image:
 ```
 sudo docker build -t soteria:v1.0 -f Dockerfile /usr/local/src/mokaguys
 ```
@@ -62,13 +62,13 @@ Running manage.py creates the database, views.py to runs the app.
 Run the docker image ensuring the correct testing mount points are supplied as below:
 
 ``` 
-docker run -p 3333:3333 -v /usr/local/src/mokaguys/development_area/soteria/samplesheets:/apps/development_area/samplesheets -v /usr/local/src/mokaguys/development_area/soteria/soteria:/development_area/soteria/soteria -u 1000:0 soteria:v1.0 manage.py
-docker run -p 3333:3333 -v /usr/local/src/mokaguys/development_area/soteria/samplesheets:/apps/development_area/samplesheets -v /usr/local/src/mokaguys/development_area/soteria/soteria:/development_area/soteria/soteria -u 1000:0 soteria:v1.0 views.py
+docker run -p 3333:3333 -v /usr/local/src/mokaguys/development_area/soteria/samplesheets:/mokaguys/development_area/soteria/samplesheets/ -v /usr/local/src/mokaguys/development_area/soteria/soteria:/mokaguys/development_area/soteria/soteria -u 1000:0 soteria:v1.0 manage.py
+docker run -p 3333:3333 -v /usr/local/src/mokaguys/development_area/soteria/samplesheets:/mokaguys/development_area/soteria/samplesheets/ -v /usr/local/src/mokaguys/development_area/soteria/soteria:/mokaguys/development_area/soteria/soteria -u 1000:0 soteria:v1.0 views.py
 ```
 
 #### Production mode
 Run the docker image ensuring the correct (production) mount points are supplied as below:
 ```
-docker run -p 3333:3333 -v /media/data3/share/samplesheets:/apps/development_area/samplesheets -v /usr/local/src/mokaguys/apps/soteria/soteria:/development_area/soteria/soteria/ soteria:v1.0 manage.py
-docker run -p 3333:3333 -v /media/data3/share/samplesheets:/apps/development_area/samplesheets -v /usr/local/src/mokaguys/apps/soteria/soteria:/development_area/soteria/soteria/ soteria:v1.0 views.py
+docker run -p 3333:3333 -v /media/data3/share/samplesheets:/mokaguys/development_area/soteria/samplesheets/ -v /usr/local/src/mokaguys/apps/soteria/soteria:/mokaguys/development_area/soteria/soteria/ -u 1000:0 soteria:v1.0 manage.py
+docker run -p 3333:3333 -v /media/data3/share/samplesheets:/mokaguys/development_area/soteria/samplesheets/ -v /usr/local/src/mokaguys/apps/soteria/soteria:/mokaguys/development_area/soteria/soteria/ -u 1000:0 soteria:v1.0 views.py
 ```

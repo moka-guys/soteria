@@ -14,5 +14,4 @@ def deploy():
     migrate()
     upgrade()
 
-
 deploy()
