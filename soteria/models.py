@@ -1,7 +1,9 @@
+# soteria/models.py
 from soteria import db
 from flask_login import UserMixin
 
 class User(UserMixin, db.Model):
+    """Contains user details"""
     __tablename__ = "user"
 
     UserID = db.Column(db.Integer, primary_key=True)
@@ -17,6 +19,7 @@ class User(UserMixin, db.Model):
         return (self.UserID)
 
 class Logins(db.Model):
+    """Contains user login info"""
     __tablename__ = "user_logins"
 
     LoginID = db.Column(db.Integer, primary_key=True)
@@ -27,6 +30,7 @@ class Logins(db.Model):
         return (self.LoginID)
 
 class FileUpload(db.Model):
+    """Contains file upload info"""
     __tablename__ = "file_upload"
 
     FileID = db.Column(db.Integer, primary_key=True)

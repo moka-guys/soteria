@@ -9,3 +9,5 @@ Flask-WTF==0.14.3
 email-validator==1.1.2
 itsdangerous==1.1.0
 Werkzeug==0.16.1
+flask-talisman==0.8.1
+waitress==1.4.3

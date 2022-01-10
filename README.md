@@ -2,19 +2,23 @@
 
 > The greek goddess of safety and salvation
 
-Simple web server that validates files and suggests changes.
+Simple flask web server that validates files and suggests changes.
 
-## Illumina SampleSheets
+## Illumina SampleSheet Upload App
 
-Validates uploaded samplesheet and places it in the right location. The samplesheet is only uploaded if it passes all 
-checks. Displays the results of the checks to the user.
+Validates uploaded samplesheets and places them in the correct location. The samplesheet is only uploaded if it passes all 
+checks. Displays the results of the checks to the user. Has user registration, login, logout and password reset 
+functionality.
 
 ## Running the webapp
+The webapp can be run in either development, testing or production mode. Development mode involves using the repository 
+as is. Testing and production mode involve running the script within a docker container and supplying the correct 
+volumes.
+
 ### Development mode
-In development mode, the script is run outside a docker image to enable changes to be easily made to the scripts.
-*TEST should be set to True in the Config*
-n.b. the production samplesheet directory path specified in the config file will only work inside the docker container 
-so there is no risk of accidentally writing to the live samplesheet folder in development mode. 
+***DEBUG should be set to True in the config***
+
+In development mode, the script is run as is to enable changes to be easily made to the scripts.
 
 Setup/running is as follows:
 
@@ -24,7 +28,7 @@ Setup/running is as follows:
 virtualenv -p python3 venv
 source venv/bin/activate
 ```
-2. Install packages]
+2. Install packages
 ```
 pip3 install -r package-requirements.txt
 ```
@@ -33,39 +37,37 @@ pip3 install -r package-requirements.txt
 python3 soteria/manage.py
 python3 soteria/views.py
 ```
-### Testing/production mode
-The app can be packaged into a docker container which can be created using the Dockerfile. The docker image is used for
-testing and production purposes (depending on the volumes provided).
+### Test and production mode
+***DEBUG should be set to False in the config file***
 
-*Ensure DEBUG = False in the config file before creating the docker image.*
-
-1. Clone the repository and then run the following commands to create the docker image:
+The app should be packaged into a docker image using the Dockerfile.
+1. Clone the repository and run the following commands to create the docker image:
 ```
 sudo docker build -t soteria:v1.0 -f Dockerfile /usr/local/src/mokaguys
 ```
-
-This will not affect any existing database / migrations directory as these are not present within the repository. 
-Therefore re-running the app will keep the existing database intact and continue to use this. 
-
-The samplesheets directory and soteria directory are mounted as volumes with read and write permissions as this is 
-required for the samplesheet checks and upload, as well as for reading and writing login details to the database.
-
 When running the container:
 * -p specifies the ports
 * -u specifies the user and group (1000 being moka-guys, 0 being root) - this ensures the database is created with 
 permissions that allow the webapp to write to the database
 * -v specifies the bind mounts, i.e. the directories on the host that are mounted into the container
 
+The following are provided as volumes to the docker container:
+* Directory containing the database/migrations
+* Samplesheets directory
+
+These volumes are provided with read and write permissions as this is required for the samplesheet checks and upload, 
+as well as for reading and writing to the database. As the directory containing the database/migrations is provided as
+a volume therefore stored outside the docker image, re-running the docker will use the existing database/migrations (no 
+risk of overwriting).
+
 Running manage.py creates the database, views.py to runs the app.
 
 #### Testing mode
 Run the docker image ensuring the correct testing mount points are supplied as below:
-
 ``` 
 docker run -p 3333:3333 -v /usr/local/src/mokaguys/development_area/soteria/samplesheets:/mokaguys/development_area/soteria/samplesheets/ -v /usr/local/src/mokaguys/development_area/soteria/soteria:/mokaguys/development_area/soteria/soteria -u 1000:0 soteria:v1.0 manage.py
 docker run -p 3333:3333 -v /usr/local/src/mokaguys/development_area/soteria/samplesheets:/mokaguys/development_area/soteria/samplesheets/ -v /usr/local/src/mokaguys/development_area/soteria/soteria:/mokaguys/development_area/soteria/soteria -u 1000:0 soteria:v1.0 views.py
 ```
-
 #### Production mode
 Run the docker image ensuring the correct (production) mount points are supplied as below:
 ```

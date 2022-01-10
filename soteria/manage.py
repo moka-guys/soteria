@@ -1,3 +1,5 @@
+# soteria/manage.py
+
 def deploy():
     """Run deployment tasks."""
     from soteria import create_app, db

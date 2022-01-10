@@ -16,7 +16,7 @@ class Config(object):
     SOTERIA_SECRETKEYS = "{}/.soteria_secretkeys".format(DOCUMENT_ROOT)
     AUTOMATED_SCRIPTS = '{}/apps/automate_demultiplex/'.format(DOCUMENT_ROOT)
 
-    # Import soteria hidden keys
+    # get soteria secret keys
     with open(SOTERIA_SECRETKEYS, "r") as keys:
         for line in keys.readlines():
             if "MAIN_SECRET_KEY" in line:
@@ -41,6 +41,5 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = True
     SESSION_TYPE = 'sqlalchemy'
 
-    # set the app so it logs a user out x minutes after the last request was made
+    # set the app to log out user x minutes after the last request was made
     PERMANENT_SESSION_LIFETIME = timedelta(minutes = 5)
-

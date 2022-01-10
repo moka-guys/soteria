@@ -13,6 +13,7 @@ COPY .amazon_email_username /mokaguys/.amazon_email_username
 COPY .amazon_email_pw /mokaguys/.amazon_email_pw
 COPY .soteria_secretkeys /mokaguys/.soteria_secretkeys
 
+# clone the repo, install packages, create dummy auth files
 RUN apt update && \
     cd /mokaguys/development_area && \
     git clone --recurse-submodules git://github.com/moka-guys/soteria.git --branch incorporate_ss_verifier_script && \

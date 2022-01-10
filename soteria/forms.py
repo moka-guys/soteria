@@ -1,9 +1,11 @@
+# soteria/forms.py
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, DataRequired, Email, Length, Regexp, EqualTo, Optional, ValidationError
 import models
 
 class register_form(FlaskForm):
+    """ User registration form"""
     firstname = StringField(
         validators=[
             InputRequired(),
@@ -44,6 +46,7 @@ class register_form(FlaskForm):
             raise ValidationError("Email already registered!")
 
 class login_form(FlaskForm):
+    """User login form"""
     email = StringField(validators=[InputRequired(), Email(), Length(1, 64)])
     pwd = PasswordField(validators=[InputRequired(), Length(min=8, max=72)])
     # Placeholder labels to enable form rendering
@@ -52,9 +55,11 @@ class login_form(FlaskForm):
     )
 
 class ResetPasswordRequestForm(FlaskForm):
+    """User password reset request form"""
     email = StringField('Email', validators=[DataRequired(), Email()])
 
 class password_reset_form(FlaskForm):
+    """User password reset form"""
     pwd = PasswordField(validators=[InputRequired(), Length(min=8, max=72)])
     # Placeholder labels to enable form rendering
     cpwd = PasswordField(
