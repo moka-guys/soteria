@@ -348,5 +348,4 @@ def get_username():
 
 
 if __name__ == "__main__":
-    soteria.debug = True
     soteria.run(host='0.0.0.0', port=3333)

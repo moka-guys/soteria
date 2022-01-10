@@ -2,19 +2,13 @@ import os
 from datetime import timedelta
 
 class Config(object):
-    # in test mode the app is run as a normal flask app
-    # in production mode the app is run within a docker container
-    TEST=False
+    # If debug mode is set to true, the app is not visible on the network, only on localhost
+    DEBUG = True
 
     # set document root as 2 levels up from this file
     DOCUMENT_ROOT = "/".join(os.path.dirname(os.path.realpath(__file__)).split("/")[:-2])
 
-    if TEST:
-        DEBUG = True
-        SS_DIR = '{}/development_area/soteria/samplesheets/'.format(DOCUMENT_ROOT)
-    else:
-        DEBUG = False
-        SS_DIR = '/apps/soteria/samplesheets/'
+    SS_DIR = '{}/development_area/soteria/samplesheets/'.format(DOCUMENT_ROOT)
 
     # set locations for secret keys/usernames/passwords/other repos needed by the app
     AMAZON_USERNAME_FILE = "{}/.amazon_email_username".format(DOCUMENT_ROOT)

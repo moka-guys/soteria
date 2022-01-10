@@ -6,8 +6,8 @@ Simple web server that validates files and suggests changes.
 
 ## Illumina SampleSheets
 
-Validates uploaded samplesheet and places it in the right location.
-
+Validates uploaded samplesheet and places it in the right location. The samplesheet is only uploaded if it passes all 
+checks. Displays the results of the checks to the user.
 
 ## Running the webapp
 ### Development mode
@@ -62,13 +62,13 @@ Running manage.py creates the database, views.py to runs the app.
 Run the docker image ensuring the correct testing mount points are supplied as below:
 
 ``` 
-docker run -p 3333:3333 -v /usr/local/src/mokaguys/development_area/soteria/samplesheets:/apps/soteria/samplesheets -v /usr/local/src/mokaguys/development_area/soteria/soteria:/apps/soteria/soteria -u 1000:0 soteria:v1.0 manage.py
-docker run -p 3333:3333 -v /usr/local/src/mokaguys/development_area/soteria/samplesheets:/apps/soteria/samplesheets -v /usr/local/src/mokaguys/development_area/soteria/soteria:/apps/soteria/soteria -u 1000:0 soteria:v1.0 views.py
+docker run -p 3333:3333 -v /usr/local/src/mokaguys/development_area/soteria/samplesheets:/apps/development_area/samplesheets -v /usr/local/src/mokaguys/development_area/soteria/soteria:/development_area/soteria/soteria -u 1000:0 soteria:v1.0 manage.py
+docker run -p 3333:3333 -v /usr/local/src/mokaguys/development_area/soteria/samplesheets:/apps/development_area/samplesheets -v /usr/local/src/mokaguys/development_area/soteria/soteria:/development_area/soteria/soteria -u 1000:0 soteria:v1.0 views.py
 ```
 
 #### Production mode
 Run the docker image ensuring the correct (production) mount points are supplied as below:
 ```
-docker run -p 3333:3333 -v /media/data3/share/samplesheets:/apps/soteria/samplesheets -v /usr/local/src/mokaguys/apps/soteria/soteria:/apps/soteria/soteria/ soteria:v1.0 manage.py
-docker run -p 3333:3333 -v /media/data3/share/samplesheets:/apps/soteria/samplesheets -v /usr/local/src/mokaguys/apps/soteria/soteria:/apps/soteria/soteria/ soteria:v1.0 views.py
+docker run -p 3333:3333 -v /media/data3/share/samplesheets:/apps/development_area/samplesheets -v /usr/local/src/mokaguys/apps/soteria/soteria:/development_area/soteria/soteria/ soteria:v1.0 manage.py
+docker run -p 3333:3333 -v /media/data3/share/samplesheets:/apps/development_area/samplesheets -v /usr/local/src/mokaguys/apps/soteria/soteria:/development_area/soteria/soteria/ soteria:v1.0 views.py
 ```
