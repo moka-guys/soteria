@@ -3,7 +3,7 @@ from datetime import timedelta
 
 class Config(object):
     # If debug mode is set to true, the app is not visible on the network, only on localhost
-    DEBUG = False
+    DEBUG = True
 
     # set document root as 2 levels up from this file
     DOCUMENT_ROOT = "/".join(os.path.dirname(os.path.realpath(__file__)).split("/")[:-2])
