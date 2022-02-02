@@ -5,8 +5,8 @@ LABEL author="Rachel Duffin" \
       maintainer="rachel.duffin2@nhs.net"
 
 # set port the container listens on
-ENV LISTEN_PORT 3333
-EXPOSE 3333
+ENV LISTEN_PORT 80
+EXPOSE 80
 
 # set the location of the app
 # set the location of the script that runs the webapp
