@@ -12,7 +12,6 @@ EXPOSE 3333
 # set the location of the script that runs the webapp
 # set max allowed file upload size to 1MB (Nginx's default)
 ENV UWSGI_INI /mokaguys/development_area/soteria/uwsgi.ini
-ENV FLASK_APP = /mokaguys/development_area/soteria/run.py
 ENV NGINX_MAX_UPLOAD 1m
 
 # create apps directory to copy automate demultiplex into it
