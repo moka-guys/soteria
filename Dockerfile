@@ -4,8 +4,9 @@ LABEL author="Rachel Duffin" \
       description="Soteria v1.0" \
       maintainer="rachel.duffin2@nhs.net"
 
-ENV LISTEN_PORT 8080
-EXPOSE 8080
+# set port the container listens on
+ENV LISTEN_PORT 3333
+EXPOSE 3333
 
 # set the location of the app
 # set the location of the script that runs the webapp
@@ -36,3 +37,6 @@ RUN apt update && \
     python3 -m pip install pip==19.1.1 && \
     cd soteria && \
     python3 -m pip install -r package-requirements.txt
+
+# workdir is used by wsgi and should be set to the application location
+WORKDIR /mokaguys/development_area/soteria
