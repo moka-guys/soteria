@@ -16,8 +16,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail
 # from flask_talisman import Talisman
 from flask_wtf.csrf import CSRFProtect
-from flask_sslify import SSLify
-
 
 app = Flask(__name__)
 app.config.from_object("config.Config")
@@ -37,7 +35,6 @@ mail = Mail()
 '''
 csrf = CSRFProtect()
 # talisman = Talisman()
-sslify = SSLify()
 
 # login manager
 login_manager = LoginManager()
@@ -69,4 +66,3 @@ with app.app_context():
     from app import views
     # talisman.init_app(app, content_security_policy=talisman_csp, force_https=True)
     csrf.init_app(app)
-    sslify.init_app(app)
