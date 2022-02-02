@@ -3,6 +3,7 @@
 <body>
 <hr/>
   <form method="POST" action="" enctype="multipart/form-data" style="padding-left:10px">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <p><input type="file" name="file"></p>
     <p><input type="submit" value="Submit"></p>
   </form>

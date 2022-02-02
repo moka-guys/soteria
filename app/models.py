@@ -1,5 +1,5 @@
-# soteria/models.py
-from soteria import db
+# app/models.py
+from app import db
 from flask_login import UserMixin
 
 class User(UserMixin, db.Model):
@@ -7,8 +7,8 @@ class User(UserMixin, db.Model):
     __tablename__ = "user"
 
     UserID = db.Column(db.Integer, primary_key=True)
-    FirstName=db.Column(db.String(80), unique=True, nullable=False)
-    Surname=db.Column(db.String(80), unique=True, nullable=False)
+    FirstName = db.Column(db.String(80), unique=True, nullable=False)
+    Surname = db.Column(db.String(80), unique=True, nullable=False)
     Email = db.Column(db.String(120), unique=True, nullable=False)
     PHash = db.Column(db.String(300), nullable=False, unique=True)
     RegisteredOn = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)

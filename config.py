@@ -3,7 +3,13 @@ from datetime import timedelta
 
 class Config(object):
     # If debug mode is set to true, the app is not visible on the network, only on localhost
-    DEBUG = True
+    DEBUG = False
+
+    # Browsers will only send cookies with requests over HTTPS if the cookie is marked “secure”
+    # SESSION_COOKIE_SECURE = True
+
+    # Enable protection agains *Cross-site Request Forgery (CSRF)*
+    WTF_CSRF_ENABLED = True
 
     # set document root as 2 levels up from this file
     DOCUMENT_ROOT = "/".join(os.path.dirname(os.path.realpath(__file__)).split("/")[:-2])
@@ -16,6 +22,12 @@ class Config(object):
     SOTERIA_SECRETKEYS = "{}/.soteria_secretkeys".format(DOCUMENT_ROOT)
     AUTOMATED_SCRIPTS = '{}/apps/automate_demultiplex/'.format(DOCUMENT_ROOT)
 
+    ''' 
+    	CSRF protection requires a secret key to securely sign the token. 
+    	By default this will use the Flask app's SECRET_KEY. 
+    	If you'd like to use a separate token you can set WTF_CSRF_SECRET_KEY.
+    		https://flask-wtf.readthedocs.io/en/stable/csrf.html
+    '''
     # get soteria secret keys
     with open(SOTERIA_SECRETKEYS, "r") as keys:
         for line in keys.readlines():
