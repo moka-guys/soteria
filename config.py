@@ -3,7 +3,7 @@ from datetime import timedelta
 
 class Config(object):
     # If debug mode is set to true, the app is not visible on the network, only on localhost
-    DEBUG = False
+    DEBUG = True
 
     # Browsers will only send cookies with requests over HTTPS if the cookie is marked “secure”
     # SESSION_COOKIE_SECURE = True

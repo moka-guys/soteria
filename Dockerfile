@@ -1,16 +1,23 @@
-FROM tiangolo/uwsgi-nginx-flask:python3.6
+FROM tiangolo/uwsgi-nginx-flask:python3.5-2019-10-14
 
 LABEL author="Rachel Duffin" \
       description="Soteria v1.0" \
       maintainer="rachel.duffin2@nhs.net"
 
 ENV LISTEN_PORT 8080
-
 EXPOSE 8080
+
+# set the location of the app
+# set the location of the script that runs the webapp
+# set max allowed file upload size to 1MB (Nginx's default)
+ENV UWSGI_INI /mokaguys/development_area/soteria/uwsgi.ini
+ENV FLASK_APP = /mokaguys/development_area/soteria/run.py
+ENV NGINX_MAX_UPLOAD 1m
 
 # create apps directory to copy automate demultiplex into it
 RUN cd / && \
-    mkdir -p mokaguys/development_area
+    mkdir -p mokaguys/development_area && \
+    rm -r /app
 
 # copy in automate demultiplex, secret keys (create dummy keys for those not required)
 COPY apps/automate_demultiplex /mokaguys/apps/automate_demultiplex
@@ -27,13 +34,5 @@ RUN apt update && \
     git clone --recurse-submodules git://github.com/moka-guys/soteria.git --branch incorporate_ss_verifier_script && \
     python3 -m pip install setuptools==43.0.0 && \
     python3 -m pip install pip==19.1.1 && \
-    cd soteria
-
-RUN python3 -m pip install -r package-requirements.txt ; exit 0
-
-WORKDIR /mokaguys/development_area/soteria/soteria
-
-# run the command to start uWSGI
-#CMD ["uwsgi", "app.ini"]
-
-#ENTRYPOINT [ "python3" ]
+    cd soteria && \
+    python3 -m pip install -r package-requirements.txt
