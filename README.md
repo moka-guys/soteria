@@ -61,6 +61,8 @@ The following are provided as bind mounts to the docker container:
 These volumes are provided with read and write permissions as this is required for the SampleSheet checks and upload, 
 as well as for reading and writing to the database. 
 
+By default, the container made from this image will listen on port 80.
+
 #### Testing mode
 In testing mode the container port 80 is mapped to the host port 3333. 
 

@@ -4,10 +4,6 @@ LABEL author="Rachel Duffin" \
       description="Soteria v1.0" \
       maintainer="rachel.duffin2@nhs.net"
 
-# set port the container listens on
-ENV LISTEN_PORT 80
-EXPOSE 80
-
 # set the location of the app
 # set the location of the script that runs the webapp
 # set max allowed file upload size to 1MB (Nginx's default)
