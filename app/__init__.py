@@ -14,7 +14,6 @@ from flask import Flask
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail
-# from flask_talisman import Talisman
 from flask_wtf.csrf import CSRFProtect
 
 app = Flask(__name__)
@@ -34,7 +33,6 @@ mail = Mail()
     use the provided CSRF extension to protect those requests as well.
 '''
 csrf = CSRFProtect()
-# talisman = Talisman()
 
 # login manager
 login_manager = LoginManager()
@@ -45,12 +43,6 @@ login_manager.login_message_category = "info"
 login_manager.needs_refresh_message = "Session timeout, please re-login"
 login_manager.needs_refresh_message_category = "info"
 
-# default content security policy is strict and prevents loading any resources that are not in the same domain as
-# the application. Add allowed sites (bootstrap and self, and unsafe-inline (allows inline scripts))
-talisman_csp = {
-    'default-src': [
-        '\'self\'', '\'unsafe-inline\'', 'ajax.googleapis.com', 'cdnjs.cloudflare.com', 'maxcdn.bootstrapcdn.com'
-    ]}
 
 # Initialize Plugins
 
@@ -64,5 +56,4 @@ with app.app_context():
     login_manager.init_app(app)
     mail.init_app(app)
     from app import views
-    # talisman.init_app(app, content_security_policy=talisman_csp, force_https=True)
     csrf.init_app(app)

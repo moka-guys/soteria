@@ -25,6 +25,7 @@ class Logins(db.Model):
     LoginID = db.Column(db.Integer, primary_key=True)
     UserID = db.Column(db.Integer, unique=False, nullable=False)
     DateStamp = db.Column(db.DateTime, server_default=db.func.now())
+    AppVersion = db.Column(db.String(20), unique=False, nullable=False)
 
     def get_id(self):
         return (self.LoginID)
@@ -35,8 +36,12 @@ class FileUpload(db.Model):
 
     FileID = db.Column(db.Integer, primary_key=True)
     UserID = db.Column(db.Integer, unique=False, nullable=False)
+    FileName = db.Column(db.String(120), unique=False, nullable=False)
+    Pass = db.Column(db.Integer, unique=False, nullable=False)
     DateStamp = db.Column(db.DateTime, server_default=db.func.now())
-    FilePath = db.Column(db.String(120), unique=True, nullable=False)
+    FilePath = db.Column(db.String(120), unique=False, nullable=True)
+    Info = db.Column(db.String, unique=False, nullable=False)
+    AppVersion = db.Column(db.String(20), unique=False, nullable=False)
 
     def get_id(self):
         return (self.FileID)

@@ -14,6 +14,7 @@ class Config(object):
     DOCUMENT_ROOT = "/".join(os.path.dirname(os.path.realpath(__file__)).split("/")[:-2])
 
     SS_DIR = '{}/development_area/soteria/samplesheets/'.format(DOCUMENT_ROOT)
+    SS_CHECK_DIR = '{}/development_area/soteria/samplesheet_check_dir/'.format(DOCUMENT_ROOT)
 
     # set locations for secret keys/usernames/passwords/other repos needed by the app
     AMAZON_USERNAME_FILE = "{}/.amazon_email_username".format(DOCUMENT_ROOT)

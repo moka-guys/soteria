@@ -5,6 +5,7 @@ import os
 import re
 import subprocess
 import sys
+import shutil
 from flask import render_template, request, redirect, url_for, abort, flash, session
 from flask_login import login_required, login_user, logout_user, current_user
 from flask_mail import Message
@@ -28,8 +29,6 @@ def load_user(UserID):
 def register():
     """Register route - registers user in database, sends confirmation email"""
     form = forms.RegisterForm(request.form)
-    # print(form)
-    # print(form.validate_on_submit())
     if request.method == 'POST' and form.validate_on_submit():
         try:
             newuser = models.User(
@@ -51,6 +50,8 @@ def register():
         except Exception as e:
             flash(e, "danger")
         return redirect(url_for("unconfirmed"))
+    else:
+        flash_errors(form)
 
     return render_template("login.html", form=form, app_version=git_tag())
 
@@ -160,10 +161,10 @@ def login():
                 else:
                     if check_password_hash(user.PHash, form.pwd.data):
                         login_user(user)
-                        flash('Logged in successfully.', "success")
 
                         # record the login in the database
-                        newlogin = models.Logins(UserID = current_user.UserID)
+                        newlogin = models.Logins(UserID = current_user.UserID,
+                                                 AppVersion=git_tag())
                         db.session.add(newlogin)
                         db.session.commit()
 
@@ -201,25 +202,42 @@ def samplesheet_upload():
         return render_template('samplesheet_upload.html', app_version=git_tag(), user=get_username())
     elif request.method == 'POST':
         ss_dir = app.config['SS_DIR']
+        ss_check_dir = app.config['SS_CHECK_DIR']
         uploaded_file = request.files['file']
-        # returns a secure versio of the filename
-        filename = secure_filename(uploaded_file.filename)
-        messages = []
+
         # assign empty variables so if 'submit' is clicked with no input file the webpage doesn't break
+        messages = []
+
+        # returns a secure version of the filename
+        filename = secure_filename(uploaded_file.filename)
+        samplesheet_check_path = os.path.join(ss_check_dir, filename)
         samplesheet_path = os.path.join(ss_dir, filename)
 
         # check if file supplied, file ends in .csv, and file doesn't already exist in samplesheet folder
-        # if passes save to samplesheet folder
+        # if passes save to samplesheet checking folder
         file_selected = check_file_selected(filename)
         correct_file_ending = check_correct_file_ending(filename)
         new_file = check_new_file(samplesheet_path)
 
         if file_selected and correct_file_ending and new_file:
-            uploaded_file.save(samplesheet_path)
+            uploaded_file.save(samplesheet_check_path)
             # collect results from samplesheet verification to pass to template
-            result, instructions, colour, messages = verify_samplesheet(samplesheet_path, messages)
+            messages, result, instructions, colour, pass_checks = verify_samplesheet(samplesheet_check_path, messages)
+
+            # If passes checks, move samplesheet into samplesheet folder
+            if pass_checks:
+                shutil.move(samplesheet_check_path, samplesheet_path)
+                fileupload_db_entry(filename, samplesheet_path, pass_checks, str(messages))
+
+            else:
+                samplesheet_path = 'NULL'
+                os.remove(samplesheet_check_path)
+                fileupload_db_entry(filename, samplesheet_path, pass_checks, str(messages))
 
         else:
+            samplesheet_path = 'NULL'
+            pass_checks = False
+            fileupload_db_entry(filename, samplesheet_path, pass_checks, str(messages))
             colour = "red"
             if not file_selected:
                 result = "No file provided"
@@ -230,6 +248,7 @@ def samplesheet_upload():
             elif not new_file:
                 result = "Samplesheet already uploaded"
                 instructions = "No further actions required"
+
     return render_template('samplesheet_upload.html', result=result, instructions=instructions, messages=messages,
                            app_version=git_tag(), txt_colour=colour, uploaded_file=filename,
                            user=get_username())
@@ -244,37 +263,44 @@ def verify_samplesheet(samplesheet_path, messages):
     import samplesheet_verifier
     import automate_demultiplex_config
 
+    # create detailed pass/error messages for webpage
     ss_verification_results = samplesheet_verifier.run_ss_checks(samplesheet_path)
 
-    if any(ss_verification_results[key][0] == False for key in ss_verification_results):
-        result = "File failed checks (NOT uploaded):"
-        instructions = "Please fix the below errors, then reupload the samplesheet!"
-        os.remove(samplesheet_path)
-        #  "docker run --rm -v `pwd`:`pwd` -w `pwd` -it {}:{} python
-        #  os.remove(samplesheet_path)".format(app.config['DOCKER_REPOSITORY'], app.config['DOCKER_TAG'])
-        colour = "red"
-    else:
-        result = "File passed checks (uploaded):"
-        instructions = "No further actions required"
-        colour = "green"
-
-        # record the upload in database
-        newupload = models.FileUpload(
-            FilePath=samplesheet_path,
-            UserID=current_user.UserID
-        )
-
-        db.session.add(newupload)
-        db.session.commit()
-
-    # create detailed pass/error messages for webpage
     for key in ss_verification_results:
         if not ss_verification_results[key][0]:
             messages.append({"ERROR": ss_verification_results[key][1]})
             messages.append({"ERROR": ss_verification_results[key][1]})
         else:
             messages.append({"Pass": ss_verification_results[key][1]})
-    return result, instructions, colour, messages
+
+    if any(ss_verification_results[key][0] == False for key in ss_verification_results):
+        result = "File failed checks (NOT uploaded):"
+        instructions = "Please fix the below errors, then reupload the samplesheet!"
+        pass_checks = False
+        colour = "red"
+    else:
+        result = "File passed checks (uploaded):"
+        instructions = "No further actions required"
+        colour = "green"
+        pass_checks = True
+
+    return messages, result, instructions, colour, pass_checks
+
+
+def fileupload_db_entry(filename, samplesheet_path, pass_checks, messages):
+    """
+    Record the upload in the database
+    """
+    newupload = models.FileUpload(
+        FileName=filename,
+        FilePath=samplesheet_path,
+        UserID=current_user.UserID,
+        Pass=pass_checks,
+        Info=messages,
+        AppVersion=git_tag()
+    )
+    db.session.add(newupload)
+    db.session.commit()
 
 
 def check_file_selected(filename):
@@ -371,3 +397,12 @@ def get_username():
     else:
         user = False
     return user
+
+def flash_errors(form):
+    """Flashes form errors"""
+    for field, errors in form.errors.items():
+        for error in errors:
+            flash(u"Error in the %s field - %s" % (
+                getattr(form, field).label.text,
+                error
+            ), 'danger')
