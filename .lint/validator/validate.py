@@ -57,7 +57,9 @@ class validators():
 
         # regex to match adapter lines as they can be Adapter, Adapter1,
         # AdapterRead1 etc.
-        adapter_regex = re.compile("^adapter(read)?[1,2]?", re.IGNORECASE)
+        # NSWHP AdapterRead fix
+        adapter_regex = re.compile("^adapter(read)?\W(behavior)[1,2]?", re.IGNORECASE)
+        # adapter_regex = re.compile("^adapter(read)?[1,2]?", re.IGNORECASE)
 
         for num, line in enumerate(self.samplesheet_header):
             # check each line of header for specific matches
@@ -84,7 +86,9 @@ class validators():
 
             if line.startswith('[Reads]'):
                 # check the next line is a valid integer
-                if not self.samplesheet_header[num + 1].strip(',').isnumeric():
+                # update to NSWHP Read1Cycles,101
+                # orig self.samplesheet_header[num + 1].strip(',').isnumeric()
+                if not self.samplesheet_header[num + 1].strip(',').split(',')[1].isnumeric():
                     header_errors.append((
                         f'Error in value for [Reads] given on line {num + 1}: '
                         f'{self.samplesheet_header[num + 1].strip(",")}'
@@ -92,6 +96,7 @@ class validators():
 
             if re.search(adapter_regex, line):
                 # check given adaptor sequence(s) are valid
+                # print (line)  # debug
                 if not all(c in 'ATCGatcg-' for c in line.split(',')[1]):
                     header_errors.append((
                         f'Error in line {num + 1}: invalid adapter sequence '
@@ -160,7 +165,7 @@ class validators():
 
             if num == len(self.bclconvert_samplesheet_header) - 2:
                 # line before column names should always be [TSO500S_Data]
-                if not line.startswith('[TSO500S_Data]'):
+                if not line.startswith('[BCLConvert_Data]'):
                     bclconvert_header_errors.append(
                         f'Error in line {num + 1}: the first cell should contain [TSO500S_Data]'
                     )
@@ -381,8 +386,8 @@ def validate_sheet(sample_sheet, regex_patterns=None) -> dict:
         - errors (dict): dictionary of errors found in samplesheet, if none
             found will be a dict of keys with empty values
     """
-    sample_sheet = read_sheet(sample_sheet)
-    validate = validators(sample_sheet, regex_patterns)
+    self_sample_sheet = read_sheet(sample_sheet)
+    validate = validators(self_sample_sheet, regex_patterns)
 
     validate.header()
     validate.bclconvert_header()
@@ -396,6 +401,7 @@ def validate_sheet(sample_sheet, regex_patterns=None) -> dict:
 def read_sheet(file) -> tuple:
     """
     Read header and body of samplesheet into df, returned in a tuple
+    Read bclconvert header and body of bclconvert samples into df, returned in a tuple
 
     Args:
         - file (str): name of samplesheet file to validate
@@ -411,22 +417,25 @@ def read_sheet(file) -> tuple:
         bclconvert_column_names = []
         sample_header_count = 0
         bclconvert_header_count = 0
+        sample_id_end = 0
+        bclconvert_id_end = 0
 
         for count, line in enumerate(f.readlines()):
             # allows multiple headers for different application coexist
             # e.g., BCLConvert and Sequencing
-            if line.strip() :
+            if line.strip().rstrip(',') :
                 if 'Sample_ID' not in line and \
                   'BCLConvert_Settings' not in line and \
                   bclconvert_header.count('[BCLConvert_Settings]') < 1 and \
                   len(column_names) == 0:
                     samplesheet_header.append(line.rstrip())
+                    bclcovert_settings_start = count - 1
                 elif 'Sample_ID' in line and \
                   len(bclconvert_header) < 1 :
                     # Sample_ID present => line is column names
                     samplesheet_header.append(line.rstrip())
                     column_names = line.split(',')
-                    sample_header_count = count
+                    sample_header_count = count - 1
                 elif '[BCLConvert_Settings]' in line :
                     bclconvert_header.append(line.rstrip())
                 elif 'Sample_ID' not in line and \
@@ -437,26 +446,39 @@ def read_sheet(file) -> tuple:
                   len(bclconvert_header) >= 1 :
                     bclconvert_header.append(line.rstrip())
                     bclconvert_column_names = line.split(',')
-                    bclconvert_header_count = count
+                    bclconvert_header_count = count - 1
+                else:
+                    bclconvert_id_end = count
+            elif bclconvert_header.count('[BCLConvert_Settings]') < 1 and \
+              sample_id_end == 0 :
+                sample_id_end = count - 1
+                # print (f"sample id : {sample_id_end}")  # debug
+            elif (bclconvert_header.count('[BCLConvert_Settings]') == 1 and \
+              bclconvert_id_end == 0):
+                bclconvert_id_end = count
 
         # used to return what row issues are on when looping over data body
         header_count = sample_header_count + 1
         bclconvert_header_count = bclconvert_header_count + 1
-        print (header_count, bclconvert_header_count)
+        print (header_count, bclconvert_header_count, bclconvert_id_end) # debug
 
-    column_row_num = bclconvert_header_count - header_count
-    samplesheet_df = pd.read_csv(
-        file, skiprows=header_count, nrows=column_row_num, names=column_names
-    )
+    csv_df = pd.read_csv(file)
+    # print (csv_df)  # debug
 
-    bclconvert_df = pd.read_csv(
-        file, skiprows=bclconvert_header_count, names=bclconvert_column_names
-    )
+    samplesheet_df = csv_df.iloc [header_count: sample_id_end , :]
+    samplesheet_columns = csv_df.iloc [sample_header_count, :].tolist()
+    # print(samplesheet_columns)    # debug
+    samplesheet_df = samplesheet_df.set_axis(samplesheet_columns, axis=1)
+    print (samplesheet_df)  # debug/UX
+
+    bclconvert_df = csv_df.iloc [bclconvert_header_count: bclconvert_id_end, 0:3]
+    bclconvert_columns = csv_df.iloc [bclconvert_header_count - 1, 0:3].tolist()
+    bclconvert_df = bclconvert_df.set_axis(bclconvert_columns, axis=1)
+    print (bclconvert_df)  # debug/UX
 
     return (samplesheet_df, samplesheet_header, header_count,
             bclconvert_df, bclconvert_header, bclconvert_header_count
     )
-
 
 def read_name_patterns(config_file):
     """
