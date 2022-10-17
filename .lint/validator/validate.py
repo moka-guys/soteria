@@ -460,7 +460,7 @@ def read_sheet(file) -> tuple:
         # used to return what row issues are on when looping over data body
         header_count = sample_header_count + 1
         bclconvert_header_count = bclconvert_header_count + 1
-        print (header_count, bclconvert_header_count, bclconvert_id_end) # debug
+        # print (header_count, bclconvert_header_count, bclconvert_id_end) # debug
 
     csv_df = pd.read_csv(file)
     # print (csv_df)  # debug
@@ -469,12 +469,12 @@ def read_sheet(file) -> tuple:
     samplesheet_columns = csv_df.iloc [sample_header_count, :].tolist()
     # print(samplesheet_columns)    # debug
     samplesheet_df = samplesheet_df.set_axis(samplesheet_columns, axis=1)
-    print (samplesheet_df)  # debug/UX
+    # print (samplesheet_df)  # debug/UX
 
     bclconvert_df = csv_df.iloc [bclconvert_header_count: bclconvert_id_end, 0:3]
     bclconvert_columns = csv_df.iloc [bclconvert_header_count - 1, 0:3].tolist()
     bclconvert_df = bclconvert_df.set_axis(bclconvert_columns, axis=1)
-    print (bclconvert_df)  # debug/UX
+    # print (bclconvert_df)  # debug/UX
 
     return (samplesheet_df, samplesheet_header, header_count,
             bclconvert_df, bclconvert_header, bclconvert_header_count
